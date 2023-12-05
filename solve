@@ -1,0 +1,46 @@
+#!/bin/sh
+if [ "$1" -ge 2015 ] && [ "$#" -gt 2 ]; then
+	year="$1"
+	shift
+else
+	year="$(date +%Y)"
+fi
+
+if test "x$1x" = "x-x"; then
+	shift
+	LOCAL_IN=1
+else
+	unset LOCAL_IN
+fi
+export LC_ALL=C
+
+py()
+{
+	exec    python3 "$@"
+}
+awk()
+{
+	exec    awk -f "$@"
+}
+sh()
+{
+	exec    bash --norc --posix "$@"
+}
+elf()
+{
+	exec    "$@"
+}
+
+if test -n "$LOCAL_IN"; then
+	cat in
+else
+	curl --disable -sL \
+		"https://adventofcode.com/$year/day/$1/input" \
+		-H 'authority: adventofcode.com' \
+		-b .cookies \
+		-H "referer: https://adventofcode.com/$year/day/$1" \
+		-H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36' \
+		--compressed
+fi | for i in elf sh py awk; do
+	test -f "$year/$1.${2:-1}.$i" && $i "$year/$1.${2:-1}.$i" && break
+done || echo "No solve found for year $year day $1 part ${2:-1}" >&2
